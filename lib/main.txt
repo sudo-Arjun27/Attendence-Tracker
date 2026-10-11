@@ -1,0 +1,88 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'login_page.dart';
+import 'home_combined.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final prefs = await SharedPreferences.getInstance();
+  String? savedRole = prefs.getString('role');
+  String? savedUsername = prefs.getString('username');
+  String? savedSubject = prefs.getString('subject');
+
+  runApp(
+    MyApp(
+      initialRole: savedRole,
+      initialUsername: savedUsername,
+      initialSubject: savedSubject,
+    ),
+  );
+}
+
+class User with ChangeNotifier {
+  String role;
+  String username;
+  String subject;
+
+  User({this.role = '', this.username = '', this.subject = ''});
+
+  void loginAs(
+    String newRole,
+    String newUsername, [
+    String newSubject = '',
+  ]) async {
+    role = newRole;
+    username = newUsername;
+    subject = newSubject;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('role', role);
+    await prefs.setString('username', username);
+    await prefs.setString('subject', subject);
+    notifyListeners();
+  }
+
+  void logout() async {
+    role = '';
+    username = '';
+    subject = '';
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('role');
+    await prefs.remove('username');
+    await prefs.remove('subject');
+    notifyListeners();
+  }
+}
+
+class MyApp extends StatelessWidget {
+  final String? initialRole;
+  final String? initialUsername;
+  final String? initialSubject;
+
+  const MyApp({
+    super.key,
+    required this.initialRole,
+    required this.initialUsername,
+    required this.initialSubject,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create:
+          (_) => User(
+            role: initialRole ?? '',
+            username: initialUsername ?? '',
+            subject: initialSubject ?? '',
+          ),
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'College App',
+        home:
+            (initialRole == null || initialRole == '')
+                ? LoginPage()
+                : HomeCombined(),
+      ),
+    );
+  }
+}
